@@ -1,0 +1,29 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO eth_accounts (address, balance)\n            VALUES ($1, $2)\n            ON CONFLICT (address)\n            DO UPDATE SET balance = EXCLUDED.balance\n            RETURNING address, balance\n            ",
+  "describe": {
+    "columns": [
+      {
+        "ordinal": 0,
+        "name": "address",
+        "type_info": "Bytea"
+      },
+      {
+        "ordinal": 1,
+        "name": "balance",
+        "type_info": "Numeric"
+      }
+    ],
+    "parameters": {
+      "Left": [
+        "Bytea",
+        "Numeric"
+      ]
+    },
+    "nullable": [
+      false,
+      false
+    ]
+  },
+  "hash": "67eea185d7d39f0b822b4a942e942f113cfcb67f5d4e2e6f0a6d9f34e6718b44"
+}

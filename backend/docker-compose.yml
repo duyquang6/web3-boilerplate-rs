@@ -1,0 +1,48 @@
+version: "3"
+
+services:
+  # init-xstore:
+  #   <<: *xstore-common
+  #   build:
+  #     dockerfile: ./store/Dockerfile.local
+  #     context: .
+  #   command: init
+
+  # xstore:
+  #   <<: *xstore-common
+  #   depends_on:
+  #     - init-xstore
+  #   ports:
+  #     - 8000:8080
+  #     - 9000:9080
+  #   command: server
+
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 123abc
+      POSTGRES_DB: postgres
+    volumes:
+      - postgres-db-volume:/var/lib/postgresql/data
+      - ./init_e2e.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 5
+    ports:
+      - 5432:5432
+    restart: always
+
+  # redis:
+  #   image: redis:7.2-alpine
+  #   restart: always
+  #   ports:
+  #     - "6379:6379"
+  #   command: redis-server --save 20 1 --loglevel warning --requirepass eYVX7EwVmmxKPCDmwMtyKVge8oLd2t81
+  #   volumes:
+  #     - redis-db-volume:/data
+
+volumes:
+  postgres-db-volume:
+  # redis-db-volume:
