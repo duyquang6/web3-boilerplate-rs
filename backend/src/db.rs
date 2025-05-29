@@ -1,59 +1,37 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgPool, postgres::PgPoolOptions};
+use sqlx::{FromRow, PgPool};
 
 type Result<T> = std::result::Result<T, sqlx::Error>;
 
-/// Initializes the database connection pool.
-pub async fn setup_db(database_url: &str) -> Result<PgPool> {
-    let pool = PgPoolOptions::new()
-        .max_connections(50)
-        .connect(database_url)
-        .await?;
-    Ok(pool)
-}
-
 /// EthAccount represents an Ethereum account in the database.
 #[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct EthAccount {
-    pub address: Vec<u8>,
+pub struct EthAccountBalance {
+    pub address: String,
+    pub token_address: String,
     pub balance: rust_decimal::Decimal,
 }
 
-impl EthAccount {
-    /// Retrieve one Ethereum accounts from the database.
-    pub async fn get_one_by_address(pool: &PgPool, address: Vec<u8>) -> Result<Option<Self>> {
-        let account = sqlx::query_as!(
-            EthAccount,
-            r#"
-            SELECT address, balance FROM eth_accounts WHERE address = $1
-            "#,
-            address
-        )
-        .fetch_optional(pool)
-        .await?;
-
-        Ok(account)
-    }
-
+impl EthAccountBalance {
     /// Upsert an Ethereum account into the database.
     pub async fn upsert_eth_account(
         pool: &PgPool,
-        address: Vec<u8>,
+        address: &str,
+        token_address: &str,
         balance: rust_decimal::Decimal,
     ) -> Result<()> {
         sqlx::query_as!(
-            EthAccount,
+            EthAccountBalance,
             r#"
-            INSERT INTO eth_accounts (address, balance)
-            VALUES ($1, $2)
-            ON CONFLICT (address)
+            INSERT INTO eth_account_balances (address, token_address, balance)
+            VALUES ($1, $2, $3)
+            ON CONFLICT (address, token_address)
             DO UPDATE SET balance = EXCLUDED.balance
-            RETURNING address, balance
             "#,
             address,
+            token_address,
             balance
         )
-        .fetch_one(pool)
+        .execute(pool)
         .await?;
 
         Ok(())
@@ -63,49 +41,32 @@ impl EthAccount {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use sqlx::Executor;
+    use alloy::primitives::address;
 
     #[sqlx::test()]
     async fn test_upsert_eth_account(pool: PgPool) {
-        let address = vec![0x1, 0x2, 0x3];
+        let address = address!("0xea921fb6d4cf7f5ced3e5a774dea51496d1ed2bf");
+        let token_address = address!("0x3b3adf1422f84254b7fbb0e7ca62bd0865133fe3");
         let balance = rust_decimal::Decimal::new(100, 0);
 
         // Upsert the account
-        EthAccount::upsert_eth_account(&pool, address.clone(), balance)
-            .await
-            .unwrap();
-
-        // Retrieve the account
-        let account = EthAccount::get_one_by_address(&pool, address)
-            .await
-            .unwrap();
-        assert!(account.is_some());
-        assert_eq!(account.unwrap().balance, balance);
-    }
-
-    #[sqlx::test()]
-    async fn test_get_one_by_address(pool: PgPool) {
-        let address = vec![0x1, 0x2, 0x3];
-        let balance = rust_decimal::Decimal::new(100, 0);
-
-        // Insert the account
-        sqlx::query!(
-            r#"
-            INSERT INTO eth_accounts (address, balance)
-            VALUES ($1, $2)
-            "#,
-            address,
-            balance
+        EthAccountBalance::upsert_eth_account(
+            &pool,
+            &address.to_string().to_lowercase(),
+            &token_address.to_string().to_lowercase(),
+            balance,
         )
-        .execute(&pool)
         .await
         .unwrap();
 
-        // Retrieve the account
-        let account = EthAccount::get_one_by_address(&pool, address)
-            .await
-            .unwrap();
-        assert!(account.is_some());
-        assert_eq!(account.unwrap().balance, balance);
+        let data = sqlx::query!(
+            r#"
+            SELECT balance FROM eth_account_balances
+            "#,
+        )
+        .fetch_one(&pool)
+        .await
+        .unwrap();
+        assert_eq!(data.balance, balance);
     }
 }
