@@ -1,19 +1,19 @@
 services:
-  # init-xstore:
-  #   <<: *xstore-common
-  #   build:
-  #     dockerfile: ./store/Dockerfile.local
-  #     context: .
-  #   command: init
-
-  # xstore:
-  #   <<: *xstore-common
-  #   depends_on:
-  #     - init-xstore
-  #   ports:
-  #     - 8000:8080
-  #     - 9000:9080
-  #   command: server
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:3000"
+    environment:
+      - DATABASE_URL=postgres://postgres:123abc@postgres:5432/postgres
+      - APP__CACHE__REDIS_URL=redis://redis:6379
+      - APP__HOST=0.0.0.0
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_started
 
   postgres:
     image: postgres:16

@@ -18,7 +18,7 @@ pub struct AppConfig {
 /// Global application configuration, loaded from `config/local.toml` and environment variables.
 pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
     let cfg = config::Config::builder()
-        .add_source(File::with_name("config/local")) // `config/local.toml`
+        .add_source(File::with_name("config/config.toml")) // `config/config.toml`
         .set_override(
             "database.url",
             std::env::var("DATABASE_URL")
