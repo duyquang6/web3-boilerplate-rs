@@ -1,0 +1,16 @@
+{
+  "db_name": "PostgreSQL",
+  "query": "\n            INSERT INTO eth_account_balances (address, token_address, balance)\n            VALUES ($1, $2, $3)\n            ON CONFLICT (address, token_address)\n            DO UPDATE SET balance = EXCLUDED.balance\n            ",
+  "describe": {
+    "columns": [],
+    "parameters": {
+      "Left": [
+        "Bpchar",
+        "Bpchar",
+        "Numeric"
+      ]
+    },
+    "nullable": []
+  },
+  "hash": "ce759dd3441534cde8631e9c0c150a00d889636bdb7e5dc4bc0fced267888440"
+}
