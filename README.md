@@ -26,6 +26,54 @@ To run the application using Docker Compose:
    cd backend && docker-compose up --build
    ```
 
+## Design Decisions and Assumptions
+
+### Backend Architecture
+1. **Rust with Axum**: Chosen for its performance, type safety, and modern async runtime
+2. **Caching Strategy**:
+   - Redis for caching block numbers and gas prices
+   - Cache TTL based on block mining duration, Block produce duration of ETH is 12 seconds (at the time of this repo created)
+   - Fallback to provider when cache misses
+3. **Database**:
+   - PostgreSQL for persistent storage
+   - SQLx for type-safe database queries
+   - Auto Migrations when startup project
+
+### API Design
+1. **RESTful Endpoints**:
+   - `/v1/public/eth/accounts/{address}` for account info
+   - `/v1/public/eth/accounts/{address}/erc20/{token_address}` for token balances
+2. **Error Handling**:
+   - Consistent error response format
+   - Validation for Ethereum addresses
+   - Proper HTTP status codes
+
+### Testing Strategy
+1. **Integration Tests**:
+   - Uses `axum-test` for HTTP testing
+   - Tests both success and error cases
+   - Includes concurrent request testing
+2. **Test Environment**:
+   - Docker Compose for service dependencies
+   - Separate test database
+   - Mock Ethereum provider responses
+
+### Security Considerations
+1. **Input Validation**:
+   - Ethereum address format validation
+   - Token address validation
+2. **Rate Limiting**:
+   - Implemented at the API level
+   - Configurable limits per endpoint
+
+### Performance Optimizations
+1. **Caching**:
+   - Block numbers cached with dynamic TTL
+   - Gas prices cached with fixed TTL
+2. **Concurrent Requests**:
+   - Async handling of multiple requests
+   - Connection pooling for database and Redis
+
 ## Known Issues and Limitations
 - The application is currently configured for the Sepolia testnet and may require adjustments for other networks.
 - Ensure your wallet has sufficient test ETH for gas fees during deployment and minting.
