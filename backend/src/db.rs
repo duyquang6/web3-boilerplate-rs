@@ -12,8 +12,8 @@ pub struct EthAccountBalance {
 }
 
 impl EthAccountBalance {
-    /// Upsert an Ethereum account into the database.
-    pub async fn upsert_eth_account(
+    /// Upserts an Ethereum account balance into the database.
+    pub async fn upsert(
         pool: &PgPool,
         address: &str,
         token_address: &str,
@@ -27,8 +27,8 @@ impl EthAccountBalance {
             ON CONFLICT (address, token_address)
             DO UPDATE SET balance = EXCLUDED.balance
             "#,
-            address,
-            token_address,
+            address.to_lowercase(),
+            token_address.to_lowercase(),
             balance
         )
         .execute(pool)
@@ -44,16 +44,16 @@ mod tests {
     use alloy::primitives::address;
 
     #[sqlx::test()]
-    async fn test_upsert_eth_account(pool: PgPool) {
+    async fn test_upsert_eth_account_balance(pool: PgPool) {
         let address = address!("0xea921fb6d4cf7f5ced3e5a774dea51496d1ed2bf");
         let token_address = address!("0x3b3adf1422f84254b7fbb0e7ca62bd0865133fe3");
         let balance = rust_decimal::Decimal::new(100, 0);
 
         // Upsert the account
-        EthAccountBalance::upsert_eth_account(
+        EthAccountBalance::upsert(
             &pool,
-            &address.to_string().to_lowercase(),
-            &token_address.to_string().to_lowercase(),
+            &address.to_string(),
+            &token_address.to_string(),
             balance,
         )
         .await
