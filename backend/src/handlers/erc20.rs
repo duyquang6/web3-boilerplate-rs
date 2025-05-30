@@ -8,6 +8,9 @@ use crate::error::ValidateError;
 use crate::state::AppState;
 use crate::{error::Result, eth::IERC20Instance};
 
+use super::utils;
+
+/// Response structure for ERC20 token balance information
 #[derive(Serialize)]
 pub struct Erc20TokenResponse {
     address: String,
@@ -15,26 +18,29 @@ pub struct Erc20TokenResponse {
     balance: String,
 }
 
+/// Handler for getting ERC20 token balance
 pub async fn get_account_erc20(
     Path((address, token_address)): Path<(String, String)>,
     State(state): State<AppState>,
 ) -> Result<Json<Erc20TokenResponse>> {
-    // Validate the Ethereum address format
-    if !address.starts_with("0x") || address.len() != 42 {
+    // Validate Ethereum addresses
+    if !utils::is_valid_ethereum_address(&address) {
         return Err(ValidateError("Invalid Ethereum address format".to_string()).into());
     }
-    if !token_address.starts_with("0x") || token_address.len() != 42 {
+    if !utils::is_valid_ethereum_address(&token_address) {
         return Err(ValidateError("Invalid token address format".to_string()).into());
     }
 
+    // Parse addresses
     let token_address = token_address.parse()?;
-    let contract = IERC20Instance::new(token_address, state.eth_provider);
-
     let address = address.parse()?;
-    let erc20_balance = contract.balanceOf(address).call().await?.to_string();
 
-    // upsert db
-    let erc20_balance_decimal = erc20_balance.parse()?;
+    // Get token balance
+    let contract = IERC20Instance::new(token_address, state.eth_provider);
+    let erc20_balance = contract.balanceOf(address).call().await?;
+
+    // Update database with current balance
+    let erc20_balance_decimal = erc20_balance.to_string().parse()?;
     state
         .repo
         .upsert_eth_account_balance(

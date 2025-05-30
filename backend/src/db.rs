@@ -1,25 +1,32 @@
+// Database module for handling PostgreSQL interactions and Ethereum account data
 use std::time::Duration;
 
 use crate::error::Result;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, PgPool, postgres::PgPoolOptions};
 
+/// Configuration for database connection settings
 #[derive(Debug, Deserialize)]
 pub struct Config {
+    /// Maximum number of concurrent database connections
     pub max_connections: u32,
+    /// Database connection URL
     pub url: String,
 }
 
-/// Repository is a struct that provides methods to interact with the database.
+/// Repository provides methods to interact with the PostgreSQL database
+/// Handles connection pooling and database operations for Ethereum account data
 #[derive(Debug, Clone)]
 pub struct Repository {
+    /// Connection pool for managing database connections
     pool: PgPool,
 }
 
 impl Repository {
-    /// Creates a new Repository instance with the provided configuration.
+    /// Creates a new Repository instance with the provided configuration
+    /// Sets up connection pooling with specified max connections and timeout
     pub async fn new_with_config(config: &Config) -> Result<Self> {
-        // set up connection pool
+        // Set up connection pool with configured parameters
         let pool = PgPoolOptions::new()
             .max_connections(config.max_connections)
             .acquire_timeout(Duration::from_secs(1))
@@ -29,17 +36,20 @@ impl Repository {
         Ok(Self { pool })
     }
 
-    /// Creates a new Repository instance with the provided connection pool.
+    /// Creates a new Repository instance with an existing connection pool
     pub async fn new(pool: PgPool) -> Self {
         Self { pool }
     }
 
+    /// Runs database migrations from the migrations directory
+    /// Ensures database schema is up to date
     pub async fn run_migrations(&self) -> Result<()> {
         sqlx::migrate!("./migrations").run(&self.pool).await?;
         Ok(())
     }
 
-    /// health check for the database connection
+    /// Performs a health check on the database connection
+    /// Returns Ok if the database is accessible
     pub async fn ping(&self) -> Result<()> {
         let _ = sqlx::query("SELECT 1")
             .execute(&self.pool)
@@ -48,7 +58,13 @@ impl Repository {
         Ok(())
     }
 
-    /// Upserts an Ethereum account balance into the database.
+    /// Updates or inserts an Ethereum account balance in the database
+    /// Uses upsert operation to handle both new and existing records
+    /// 
+    /// # Arguments
+    /// * `address` - Ethereum account address
+    /// * `token_address` - ERC20 token contract address
+    /// * `balance` - Current token balance
     pub async fn upsert_eth_account_balance(
         &self,
         address: &str,
@@ -74,11 +90,15 @@ impl Repository {
     }
 }
 
-/// EthAccount represents an Ethereum account in the database.
+/// Represents an Ethereum account balance record in the database
+/// Stores the relationship between an account, token, and its balance
 #[derive(Debug, Serialize, Deserialize, FromRow)]
 pub struct EthAccountBalance {
+    /// Ethereum account address
     pub address: String,
+    /// ERC20 token contract address
     pub token_address: String,
+    /// Current token balance
     pub balance: rust_decimal::Decimal,
 }
 

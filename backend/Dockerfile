@@ -1,11 +1,9 @@
 # Build stage
 FROM rust:bookworm as builder
 
-# Create a new empty shell project
 WORKDIR /usr/src/app
 RUN cargo init --bin
 
-# Copy over your manifests
 COPY Cargo.toml Cargo.lock ./
 
 # Build dependencies - this is the caching Docker layer
