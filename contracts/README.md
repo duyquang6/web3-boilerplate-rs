@@ -2,6 +2,8 @@
 
 This guide explains how to set up your environment, deploy and verify the MyToken ERC20 contract, and mint tokens on the Sepolia testnet.
 
+Contract has been deployed at https://sepolia.etherscan.io/address/0xab809cb0ab6669d51f6189432f751f1a916a10cd
+
 ---
 
 ## Prerequisites
@@ -73,7 +75,7 @@ npx hardhat verify --network sepolia <DEPLOYED_CONTRACT_ADDRESS>
 You can mint tokens to your wallet using the provided script:
 
 ```sh
-npx dotenv -e .env -- npx tsx scripts/mint.ts
+npx ts-node scripts/mint.ts
 ```
 
 - This will mint 100 tokens (with 18 decimals) to the wallet specified by your `SEPOLIA_PRIVATE_KEY`.
@@ -91,13 +93,6 @@ npx dotenv -e .env -- npx tsx scripts/mint.ts
   ```sh
   npx hardhat clean
   ```
-
----
-
-## 6. Troubleshooting
-- Ensure your wallet has enough Sepolia test ETH for gas fees.
-- Double-check your `.env` values for typos.
-- For contract verification, ensure the contract is deployed and the address is correct.
 
 ---
 

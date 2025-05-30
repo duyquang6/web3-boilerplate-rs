@@ -14,7 +14,6 @@ This project is a full-stack application that includes a frontend, backend, and 
 
 For detailed setup instructions, please refer to the README files in each directory:
 
-- [Frontend README](./frontend/README.md)
 - [Backend README](./backend/README.md)
 - [Smart Contracts README](./contracts/README.md)
 

@@ -73,21 +73,6 @@ The project uses SQLx for database operations. To set up SQLx:
 cargo install sqlx-cli
 ```
 
-2. Create a `.env` file with your database URL:
-```
-DATABASE_URL=postgres://postgres:123abc@localhost:5432/postgres
-```
-
-3. Run migrations:
-```bash
-sqlx migrate run
-```
-
-4. For offline mode (when you can't connect to the database):
-```bash
-sqlx prepare -- --lib
-```
-
 ## API Documentation
 
 ### Endpoints
@@ -230,6 +215,9 @@ cargo test
 
 # Run specific test
 cargo test <test_name>
+
+# Run integration test
+make integration-test
 ```
 
 ## Docker Support
@@ -255,11 +243,3 @@ docker-compose down
 ├── abi/           # Contract ABIs
 └── .sqlx/         # SQLx query metadata
 ```
-
-## Contributing
-
-[Contributing guidelines will be added here]
-
-## License
-
-[License information will be added here]
