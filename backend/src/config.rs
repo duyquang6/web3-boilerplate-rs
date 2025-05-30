@@ -15,6 +15,7 @@ pub struct AppConfig {
     pub cache: cache::Config,
 }
 
+/// Global application configuration, loaded from `config/local.toml` and environment variables.
 pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {
     let cfg = config::Config::builder()
         .add_source(File::with_name("config/local")) // `config/local.toml`

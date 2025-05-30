@@ -18,6 +18,7 @@ pub struct DistCache {
 }
 
 impl DistCache {
+    /// Create a new instance of `DistCache` with the provided configuration.
     pub fn new(config: &Config) -> Self {
         let client = redis::Client::open(config.redis_url.clone()).expect("Invalid Redis URL");
         Self {
@@ -26,6 +27,7 @@ impl DistCache {
         }
     }
 
+    /// Get a connection to the Redis cache.
     pub async fn get_conn(&self) -> Result<MultiplexedConnection> {
         let conn = self
             .client
@@ -38,6 +40,7 @@ impl DistCache {
         Ok(conn)
     }
 
+    /// Set a key-value pair in the cache with a specified TTL (time to live).
     pub async fn set_ex<T>(&self, key: &str, value: T, ttl: u64) -> Result<()>
     where
         T: ToRedisArgs + Send + Sync,

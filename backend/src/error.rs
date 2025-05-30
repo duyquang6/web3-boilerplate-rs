@@ -1,13 +1,13 @@
 use std::fmt::Display;
 
 use axum::{
-    Json,
     http::StatusCode,
     response::{self, IntoResponse},
 };
 use serde_json::json;
 use thiserror::Error;
 
+/// Custom error type for the application, wrapping `anyhow::Error`.
 #[derive(Debug)]
 pub struct AppError(anyhow::Error);
 
@@ -60,4 +60,5 @@ pub struct NotFoundError(pub String);
 #[error("Validate error: {0}")]
 pub struct ValidateError(pub String);
 
+/// Result type for the application, aliasing `std::result::Result` with `AppError`.
 pub type Result<T> = std::result::Result<T, AppError>;
