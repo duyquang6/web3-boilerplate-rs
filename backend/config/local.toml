@@ -1,6 +1,11 @@
 host = "localhost"
 port = 3000
-eth_rpc_url = "https://eth-sepolia.g.alchemy.com/v2/GbF7FGtPnkvKpeDG3yrLzm5g4n0tNnvj"
+# should use private rpc for fast response
+eth_rpc_url = "https://1rpc.io/sepolia" # public sepolia RPC
 
 [database]
 max_connections = 50
+
+[cache]
+redis_url = "redis://localhost:6379"
+connect_timeout = 1 # 1sec

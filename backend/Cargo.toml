@@ -20,3 +20,4 @@ anyhow = "1.0"
 alloy-sol-types = "1.1.2"
 alloy-contract = "1.0.9"
 thiserror = "2.0.12"
+redis = { version = "0.31.0", features = ["tokio-comp", "rust_decimal"] }

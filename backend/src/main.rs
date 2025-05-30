@@ -1,10 +1,7 @@
 use axum::{Router, routing::get};
-use sqlx::postgres::PgPoolOptions;
 use state::AppState;
-use tokio::{net::TcpListener, sync::Mutex};
+use tokio::net::TcpListener;
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
-
-use std::{any::Any, num::NonZeroUsize, sync::Arc, time::Duration};
 
 mod error;
 use error::Result;
@@ -17,6 +14,7 @@ mod eth;
 mod handlers;
 mod state;
 
+mod cache;
 mod db;
 
 #[tokio::main]
@@ -29,21 +27,19 @@ async fn main() {
         .with(tracing_subscriber::fmt::layer())
         .init();
 
-    // set up connection pool
-    let pool = PgPoolOptions::new()
-        .max_connections(CONFIG.database.max_connections)
-        .acquire_timeout(Duration::from_secs(1))
-        .connect(&CONFIG.database.url)
-        .await
-        .expect("can't connect to database");
-
     let eth_provider = eth::setup_provider(&CONFIG.eth_rpc_url)
         .await
         .expect("setup eth_provider failed");
 
+    let repo = db::Repository::new_with_config(&CONFIG.database)
+        .await
+        .expect("setup repository failed");
+
+    let dist_cache = cache::DistCache::new(&CONFIG.cache);
     let app_state = AppState {
-        pg_pool: pool,
+        repo,
         eth_provider,
+        cache: dist_cache,
     };
 
     let eth_accounts_router = Router::new()
@@ -51,12 +47,13 @@ async fn main() {
         .route(
             "/{address}/erc20/{token_address}",
             get(handlers::erc20::get_account_erc20),
-        )
-        .with_state(app_state);
+        );
 
     let app = Router::new()
         .route("/ping", get(async || -> Result<()> { Ok(()) }))
-        .nest("/v1/public/eth/accounts", eth_accounts_router);
+        .route("/health", get(handlers::health::healthcheck))
+        .nest("/v1/public/eth/accounts", eth_accounts_router)
+        .with_state(app_state);
 
     let serve_addr = format!("{}:{}", CONFIG.host, CONFIG.port);
     let listener = TcpListener::bind(serve_addr).await.unwrap();

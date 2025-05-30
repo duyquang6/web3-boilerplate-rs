@@ -3,19 +3,16 @@ use std::sync::LazyLock;
 use config::{Environment, File};
 use serde::Deserialize;
 
+use crate::{cache, db};
+
 /// AppConfig define config
 #[derive(Debug, Deserialize)]
 pub struct AppConfig {
     pub host: String,
     pub port: u16,
-    pub database: Database,
+    pub database: db::Config,
     pub eth_rpc_url: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct Database {
-    pub max_connections: u32,
-    pub url: String,
+    pub cache: cache::Config,
 }
 
 pub static CONFIG: LazyLock<AppConfig> = LazyLock::new(|| {

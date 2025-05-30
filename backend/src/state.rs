@@ -1,12 +1,11 @@
-use std::{any::Any, sync::Arc};
-
 use alloy::providers::DynProvider;
-use sqlx::PgPool;
-use tokio::sync::Mutex;
+
+use crate::{cache::DistCache, db::Repository};
 
 // the application state
 #[derive(Clone)]
 pub struct AppState {
-    pub pg_pool: PgPool,
+    pub repo: Repository,
     pub eth_provider: DynProvider,
+    pub cache: DistCache,
 }

@@ -4,8 +4,8 @@ use axum::{
 };
 use serde::Serialize;
 
+use crate::error::ValidateError;
 use crate::state::AppState;
-use crate::{db::EthAccountBalance, error::ValidateError};
 use crate::{error::Result, eth::IERC20Instance};
 
 #[derive(Serialize)]
@@ -33,15 +33,16 @@ pub async fn get_account_erc20(
     let address = address.parse()?;
     let erc20_balance = contract.balanceOf(address).call().await?.to_string();
 
-    // insert db
+    // upsert db
     let erc20_balance_decimal = erc20_balance.parse()?;
-    EthAccountBalance::upsert(
-        &state.pg_pool,
-        &address.to_string().to_lowercase(),
-        &token_address.to_string().to_lowercase(),
-        erc20_balance_decimal,
-    )
-    .await?;
+    state
+        .repo
+        .upsert_eth_account_balance(
+            &address.to_string(),
+            &token_address.to_string(),
+            erc20_balance_decimal,
+        )
+        .await?;
 
     Ok(Json(Erc20TokenResponse {
         address: address.to_string(),

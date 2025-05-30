@@ -1,20 +1,47 @@
+use std::time::Duration;
+
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, PgPool};
+use sqlx::{FromRow, PgPool, postgres::PgPoolOptions};
 
 type Result<T> = std::result::Result<T, sqlx::Error>;
 
-/// EthAccount represents an Ethereum account in the database.
-#[derive(Debug, Serialize, Deserialize, FromRow)]
-pub struct EthAccountBalance {
-    pub address: String,
-    pub token_address: String,
-    pub balance: rust_decimal::Decimal,
+#[derive(Debug, Deserialize)]
+pub struct Config {
+    pub max_connections: u32,
+    pub url: String,
 }
 
-impl EthAccountBalance {
+#[derive(Debug, Clone)]
+pub struct Repository {
+    pool: PgPool,
+}
+
+impl Repository {
+    pub async fn new_with_config(config: &Config) -> Result<Self> {
+        // set up connection pool
+        let pool = PgPoolOptions::new()
+            .max_connections(config.max_connections)
+            .acquire_timeout(Duration::from_secs(1))
+            .connect(&config.url)
+            .await?;
+
+        Ok(Self { pool })
+    }
+
+    pub async fn new(pool: PgPool) -> Self {
+        Self { pool }
+    }
+
+    pub async fn ping(&self) -> Result<()> {
+        sqlx::query("SELECT 1")
+            .execute(&self.pool)
+            .await
+            .map(|_| ())
+    }
+
     /// Upserts an Ethereum account balance into the database.
-    pub async fn upsert(
-        pool: &PgPool,
+    pub async fn upsert_eth_account_balance(
+        &self,
         address: &str,
         token_address: &str,
         balance: rust_decimal::Decimal,
@@ -31,11 +58,19 @@ impl EthAccountBalance {
             token_address.to_lowercase(),
             balance
         )
-        .execute(pool)
+        .execute(&self.pool)
         .await?;
 
         Ok(())
     }
+}
+
+/// EthAccount represents an Ethereum account in the database.
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct EthAccountBalance {
+    pub address: String,
+    pub token_address: String,
+    pub balance: rust_decimal::Decimal,
 }
 
 #[cfg(test)]
@@ -49,15 +84,12 @@ mod tests {
         let token_address = address!("0x3b3adf1422f84254b7fbb0e7ca62bd0865133fe3");
         let balance = rust_decimal::Decimal::new(100, 0);
 
+        let repo = Repository::new(pool.clone()).await;
+
         // Upsert the account
-        EthAccountBalance::upsert(
-            &pool,
-            &address.to_string(),
-            &token_address.to_string(),
-            balance,
-        )
-        .await
-        .unwrap();
+        repo.upsert_eth_account_balance(&address.to_string(), &token_address.to_string(), balance)
+            .await
+            .unwrap();
 
         let data = sqlx::query!(
             r#"
