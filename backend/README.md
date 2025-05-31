@@ -1,6 +1,6 @@
-# TechBank Backend
+# DApp Web3 Backend
 
-A Rust-based backend service for the TechBank application, built with Axum, SQLx, and Redis.
+A Rust-based backend service for the DApp Web3 application, built with Axum, SQLx, and Redis.
 
 ## Features
 
