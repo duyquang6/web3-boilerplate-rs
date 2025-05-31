@@ -1,21 +1,15 @@
 use axum::{
-    Router,
-    routing::get,
+    http::StatusCode, routing::get, Router
 };
 use axum_test::TestServer;
 use serde_json::Value;
 
 use backend::{
-    cache::DistCache,
-    config::CONFIG,
-    db::Repository,
-    eth::setup_provider,
-    state::AppState,
-    handlers::{
+    cache::DistCache, config::CONFIG, db::Repository, eth::setup_provider, handlers::{
         account::get_account_info,
         erc20::get_account_erc20,
-        health::healthcheck,
-    },
+        health::healthcheck, misc::get_blockchain_misc,
+    }, state::AppState
 };
 
 // Helper function to create a test router
@@ -42,6 +36,7 @@ async fn create_test_router() -> Router {
             "/v1/public/eth/accounts/{address}/erc20/{token_address}",
             get(get_account_erc20),
         )
+        .route("/v1/public/eth/misc", get(get_blockchain_misc))
         .with_state(app_state)
 }
 
@@ -124,4 +119,41 @@ async fn test_get_erc20_balance_valid_addresses() {
     assert_eq!(body["address"].as_str().unwrap().to_lowercase(), account_address);
     assert_eq!(body["token_address"], token_address);
     assert!(body["balance"].is_string());
+}
+
+#[tokio::test]
+async fn test_get_account_endpoint() {
+    let app = create_test_router().await;
+    let server = TestServer::new(app).expect("Failed to create test server");
+
+    // Test with invalid address
+    let response = server
+        .get("/v1/public/eth/accounts/0xinvalid")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::BAD_REQUEST);
+
+    // Test with valid address
+    let response = server
+        .get("/v1/public/eth/accounts/0x742d35Cc6634C0532925a3b844Bc454e4438f44e")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+
+    let body: Value = response.json();
+    assert!(body.get("address").is_some());
+    assert!(body.get("balance").is_some());
+}
+
+#[tokio::test]
+async fn test_get_blockchain_misc_endpoint() {
+    let app = create_test_router().await;
+    let server = TestServer::new(app).expect("Failed to create test server");
+
+    let response = server
+        .get("/v1/public/eth/misc")
+        .await;
+    assert_eq!(response.status_code(), StatusCode::OK);
+
+    let body: Value = response.json();
+    assert!(body.get("current_block").is_some());
+    assert!(body.get("gas_price").is_some());
 }

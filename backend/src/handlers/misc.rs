@@ -52,6 +52,10 @@ async fn fetch_and_cache_block_number(state: &AppState) -> Result<u64> {
         .map_err(|_| anyhow!("Failed to get current time"))?
         .as_secs();
 
+    // Calculate cache TTL based on block mining duration and current block timestamp
+    // This ensures the cache expires just before the next block is expected to be mined
+    // Formula: TTL = Block mining duration + (Block timestamp - Current time)
+    // This way, we always have fresh data when a new block is mined
     let cache_ttl = utils::BLOCK_MINE_DURATION as i64 + current_block.header.timestamp() as i64
         - epoch_now as i64;
 
