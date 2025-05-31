@@ -58,6 +58,7 @@ async fn setup_app() -> Router {
         .route("/ping", get(async || -> Result<()> { Ok(()) }))
         .route("/health", get(handlers::health::healthcheck))
         .nest("/v1/public/eth/accounts", eth_accounts_router)
+        .route("/v1/public/eth/misc", get(handlers::misc::get_blockchain_misc))
         .with_state(app_state)
 }
 
@@ -83,20 +84,48 @@ async fn main() {
     axum::serve(listener, app).await.unwrap();
 }
 
-// #[cfg(test)]
-// mod tests {
-//     use super::*;
-//     use axum::body::Body;
-//     use axum::http::{Request, StatusCode};
-//     use axum_test::TestServer;
-//     use serde_json::Value;
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use axum::body::Body;
+    use axum::http::{Request, StatusCode};
+    use axum_test::TestServer;
+    use serde_json::Value;
 
-//     #[tokio::test]
-//     async fn test_get_account_endpoint() {
-//         let app = setup_app().await;
+    #[tokio::test]
+    async fn test_get_account_endpoint() {
+        let app = setup_app().await;
+        let server = TestServer::new(app).expect("Failed to create test server");
 
-//         let server = TestServer::new(app).expect("Failed to create test server");
+        // Test with invalid address
+        let response = server
+            .get("/v1/public/eth/accounts/0xinvalid")
+            .await;
+        assert_eq!(response.status_code(), StatusCode::BAD_REQUEST);
 
-//         let address = "0x";
-//     }
-// }
+        // Test with valid address
+        let response = server
+            .get("/v1/public/eth/accounts/0x742d35Cc6634C0532925a3b844Bc454e4438f44e")
+            .await;
+        assert_eq!(response.status_code(), StatusCode::OK);
+
+        let body: Value = response.json();
+        assert!(body.get("address").is_some());
+        assert!(body.get("balance").is_some());
+    }
+
+    #[tokio::test]
+    async fn test_get_blockchain_misc_endpoint() {
+        let app = setup_app().await;
+        let server = TestServer::new(app).expect("Failed to create test server");
+
+        let response = server
+            .get("/v1/public/eth/misc")
+            .await;
+        assert_eq!(response.status_code(), StatusCode::OK);
+
+        let body: Value = response.json();
+        assert!(body.get("current_block").is_some());
+        assert!(body.get("gas_price").is_some());
+    }
+}

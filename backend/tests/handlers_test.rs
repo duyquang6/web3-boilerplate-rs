@@ -82,8 +82,6 @@ async fn test_get_account_info_valid_address() {
     assert_eq!(response.status_code(), 200);
     let body: Value = response.json();
     assert_eq!(body["address"], test_address);
-    assert!(body["current_block"].is_number());
-    assert!(body["gas_price"].is_number());
     assert!(body["balance"].is_string());
 }
 
