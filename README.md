@@ -39,6 +39,41 @@ To run the application using Docker Compose:
    - SQLx for type-safe database queries
    - Auto Migrations when startup project
 
+### Network Assumption
+The current implementation assumes interaction with a single Ethereum network (e.g., Sepolia testnet). This assumption is reflected in:
+
+1. **Database Design**:
+   - No network identifier in account balance tables
+   - Single network configuration in environment variables
+   - No network-specific caching strategies
+
+2. **API Design**:
+   - No network parameter in API endpoints
+   - Single provider configuration
+   - Network-agnostic response structures
+
+To support multiple networks in the future, the following changes would be required:
+
+1. **Database Changes**:
+   - Add network identifier column to relevant tables
+   - Implement network-specific migrations
+   - Consider network-specific indexes
+
+2. **API Changes**:
+   - Add network parameter to endpoints (e.g., `/v1/public/{network}/eth/accounts/{address}`)
+   - Implement network-specific validation
+   - Add network information in responses
+
+3. **Infrastructure Changes**:
+   - Multiple RPC provider configurations
+   - Network-specific caching strategies
+   - Network-specific rate limiting
+
+4. **Configuration Changes**:
+   - Network-specific environment variables
+   - Network-specific constants and parameters
+   - Network-specific ABI configurations
+
 ### API Design
 1. **RESTful Endpoints**:
    - `/v1/public/eth/accounts/{address}` for account info
@@ -88,19 +123,24 @@ Once the backend server is running, you can interact with it using the following
 1. **Get Account Information**
    - **URL**: `http://localhost:8080/v1/public/eth/accounts/<ethereum-address>`
    - **Method**: `GET`
-   - **Description**: Returns the account information, including the current block number, gas price, and balance for the specified Ethereum address.
+   - **Description**: Returns the account information, including the balance for the specified Ethereum address.
 
-2. **Get ERC20 Token Balance**
+2. **Get Blockchain Misc Information**
+   - **URL**: `http://localhost:8080/v1/public/eth/misc`
+   - **Method**: `GET`
+   - **Description**: Returns the current block number and gas price from the Ethereum network.
+
+3. **Get ERC20 Token Balance**
    - **URL**: `http://localhost:8080/v1/public/eth/accounts/<ethereum-address>/erc20/<token-address>`
    - **Method**: `GET`
    - **Description**: Returns the ERC20 token balance for the specified Ethereum address and token address.
 
-3. **Health Check**
+4. **Health Check**
    - **URL**: `http://localhost:8080/health`
    - **Method**: `GET`
    - **Description**: Checks the health of the backend services, including the database, Ethereum provider, and cache.
 
-4. **Ping**
+5. **Ping**
    - **URL**: `http://localhost:8080/ping`
    - **Method**: `GET`
    - **Description**: A simple endpoint to check if the server is running.
@@ -112,6 +152,11 @@ You can use tools like `curl` or Postman to interact with these endpoints. Here 
 - **Get Account Information**:
   ```sh
   curl http://localhost:8080/v1/public/eth/accounts/0xYourEthereumAddress
+  ```
+
+- **Get Blockchain Misc Information**:
+  ```sh
+  curl http://localhost:8080/v1/public/eth/misc
   ```
 
 - **Get ERC20 Token Balance**:

@@ -96,9 +96,18 @@ cargo install sqlx-cli
     ```json
     {
       "address": "string",
-      "current_block": "number",
-      "gas_price": "number",
       "balance": "string"
+    }
+    ```
+
+#### Blockchain Misc Information
+- `GET /v1/public/eth/misc`
+  - Get current blockchain information including block number and gas price
+  - Returns:
+    ```json
+    {
+      "current_block": "number",
+      "gas_price": "number"
     }
     ```
 
@@ -160,14 +169,24 @@ curl -X GET http://localhost:8080/v1/public/eth/accounts/0x742d35Cc6634C0532925a
 # Response (200 OK)
 {
   "address": "0x742d35Cc6634C0532925a3b844Bc454e4438f44e",
-  "current_block": 12345678,
-  "gas_price": 25000000000,
   "balance": "1000000000000000000"
 }
 
 # Error Response (400 Bad Request) - Invalid address format
 {
   "error_msg": "Invalid Ethereum address format"
+}
+```
+
+#### Blockchain Misc Information
+```bash
+# Request
+curl -X GET http://localhost:8080/v1/public/eth/misc
+
+# Response (200 OK)
+{
+  "current_block": 12345678,
+  "gas_price": 25000000000
 }
 
 # Error Response (404 Not Found) - Block not found

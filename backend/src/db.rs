@@ -101,9 +101,3 @@ pub struct EthAccountBalance {
     /// Current token balance
     pub balance: rust_decimal::Decimal,
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use alloy::primitives::address;
-}
